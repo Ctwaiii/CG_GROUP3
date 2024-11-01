@@ -1,0 +1,114 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: VKGraphic - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\shaju\LOCALS~1\Temp\RSP5B9.tmp" with contents
+[
+/nologo /MT /W3 /GX /O2 /I "..\VKGeom" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "VKGRAPHIC_EXPORTS" /Fp"Release/VKGraphic.pch" /Yu"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\font.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLAxisSystem.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLCamera.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLColor.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLCurve.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLFont.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLGrid.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLMaterial.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLOneAxis.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLPlane.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLPoint.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLSurface.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLTrihedron.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\ListIteratorOfListOfCGLObject.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\ListNodeOfCGLObject.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\ListOfCGLObject.cpp"
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\VKGraphic.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\shaju\LOCALS~1\Temp\RSP5B9.tmp" 
+Creating temporary file "C:\DOCUME~1\shaju\LOCALS~1\Temp\RSP5BA.tmp" with contents
+[
+/nologo /MT /W3 /GX /O2 /I "..\VKGeom" /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /D "_USRDLL" /D "VKGRAPHIC_EXPORTS" /Fp"Release/VKGraphic.pch" /Yc"stdafx.h" /Fo"Release/" /Fd"Release/" /FD /c 
+"C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\StdAfx.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\shaju\LOCALS~1\Temp\RSP5BA.tmp" 
+Creating temporary file "C:\DOCUME~1\shaju\LOCALS~1\Temp\RSP5BB.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib opengl32.lib glu32.lib VKGeom.lib /nologo /dll /incremental:no /pdb:"Release/VKGraphic.pdb" /machine:I386 /out:"Release/VKGraphic.dll" /implib:"Release/VKGraphic.lib" /libpath:"..\VKGeom\Release" 
+".\Release\font.obj"
+".\Release\GLAxisSystem.obj"
+".\Release\GLCamera.obj"
+".\Release\GLColor.obj"
+".\Release\GLCurve.obj"
+".\Release\GLFont.obj"
+".\Release\GLGrid.obj"
+".\Release\GLMaterial.obj"
+".\Release\GLObject.obj"
+".\Release\GLOneAxis.obj"
+".\Release\GLPlane.obj"
+".\Release\GLPoint.obj"
+".\Release\GLSurface.obj"
+".\Release\GLTrihedron.obj"
+".\Release\ListIteratorOfListOfCGLObject.obj"
+".\Release\ListNodeOfCGLObject.obj"
+".\Release\ListOfCGLObject.obj"
+".\Release\StdAfx.obj"
+".\Release\VKGraphic.obj"
+]
+Creating command line "link.exe @C:\DOCUME~1\shaju\LOCALS~1\Temp\RSP5BB.tmp"
+<h3>Output Window</h3>
+Compiling...
+StdAfx.cpp
+Compiling...
+font.cpp
+GLAxisSystem.cpp
+GLCamera.cpp
+GLColor.cpp
+GLCurve.cpp
+GLFont.cpp
+GLGrid.cpp
+GLMaterial.cpp
+GLObject.cpp
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp(40) : warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp(41) : warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp(42) : warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp(43) : warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp(114) : warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp(115) : warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp(116) : warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp(117) : warning C4244: '=' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp(177) : warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp(178) : warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp(179) : warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp(180) : warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp(185) : warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLObject.cpp(187) : warning C4244: 'initializing' : conversion from 'double' to 'float', possible loss of data
+GLOneAxis.cpp
+GLPlane.cpp
+GLPoint.cpp
+GLSurface.cpp
+GLTrihedron.cpp
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLTrihedron.cpp(87) : warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLTrihedron.cpp(90) : warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLTrihedron.cpp(100) : warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLTrihedron.cpp(103) : warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLTrihedron.cpp(112) : warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
+C:\Documents and Settings\shaju\Desktop\dist\VKernel\VKGraphic\GLTrihedron.cpp(115) : warning C4244: 'argument' : conversion from 'double' to 'float', possible loss of data
+ListIteratorOfListOfCGLObject.cpp
+ListNodeOfCGLObject.cpp
+ListOfCGLObject.cpp
+VKGraphic.cpp
+Generating Code...
+Linking...
+   Creating library Release/VKGraphic.lib and object Release/VKGraphic.exp
+
+
+
+<h3>Results</h3>
+VKGraphic.dll - 0 error(s), 20 warning(s)
+</pre>
+</body>
+</html>
