@@ -980,6 +980,12 @@ void CGLView::Fit3d(CRect rect)
 	yTrans -= dy;
 }
 
+CGLObject* CGLView::CurrentSelected()
+{
+	theContext->InitSelected();
+	return theContext->CurrentSelected();
+}
+
 void CGLView::Select(const int &x, const int &y)
 {
 	theContext->Select(this, x, y);

@@ -376,6 +376,8 @@ void CGLDisplayContext::NextSelected() const
 CGLObject* CGLDisplayContext::CurrentSelected() const
 {
 	CGLObject* sO = selListIter.Current();
+	if (!sO)
+		return nullptr;
 	CGLObject* O = 0;
 	CListIteratorOfListOfCGLObject listIter(display);
 	for(listIter.Init(); listIter.More(); listIter.Next())

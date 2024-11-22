@@ -141,6 +141,7 @@
     </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="BSplineCurveManager.cpp" />
     <ClCompile Include="CadSurf.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -191,6 +192,7 @@
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
+    <ClCompile Include="Input.cpp" />
     <ClCompile Include="LibDef.cpp">
       <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -245,6 +247,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BSplineCurveManager.h" />
     <ClInclude Include="CadSurf.h" />
     <ClInclude Include="CadSurfDoc.h" />
     <ClInclude Include="CadSurfView.h" />
@@ -255,6 +258,7 @@
     <ClInclude Include="GLView.h" />
     <ClInclude Include="GridDlg.h" />
     <ClInclude Include="Hdibapi.h" />
+    <ClInclude Include="Input.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="LightDlg.h" />
     <ClInclude Include="MainFrm.h" />

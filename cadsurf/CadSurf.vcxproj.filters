@@ -72,6 +72,12 @@
     <ClCompile Include="CREATELINE.CPP">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="BSplineCurveManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Input.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="CadSurf.rc">
@@ -134,6 +140,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CREATECMD.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BSplineCurveManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -53,6 +53,16 @@ BEGIN
     PUSHBUTTON      "Modify",IDC_BUTTONmodify,179,98,50,14
 END
 
+IDD_DIALOG1 DIALOGEX 0, 0, 310, 177
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CONTROL | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "Dialog"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    DEFPUSHBUTTON   "确定",IDOK,199,156,50,14
+    PUSHBUTTON      "取消",IDCANCEL,253,156,50,14
+    EDITTEXT        IDC_EDIT2,28,39,251,86,ES_AUTOHSCROLL
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -69,8 +79,27 @@ BEGIN
         TOPMARGIN, 7
         BOTTOMMARGIN, 133
     END
+
+    IDD_DIALOG1, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 303
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 170
+    END
 END
 #endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_DIALOG1 AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
 
 #endif    // 中文(简体，中国) resources
 /////////////////////////////////////////////////////////////////////////////
@@ -93,7 +122,7 @@ STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
 CAPTION "                      About CadSurf"
 FONT 10, "??", 400, 0, 0x0
 BEGIN
-    CONTROL         143,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,6,2,171,132,WS_EX_DLGMODALFRAME
+    CONTROL         IDB_SMALLSPLASH,IDC_STATIC,"Static",SS_BITMAP | SS_REALSIZEIMAGE | WS_BORDER,6,2,171,132,WS_EX_DLGMODALFRAME
     DEFPUSHBUTTON   "OK",IDOK,7,276,168,20,WS_GROUP
     EDITTEXT        IDC_EDIT1,7,139,168,116,ES_MULTILINE | ES_READONLY | WS_VSCROLL
     LTEXT           "2016?CG?????",IDC_STATIC,7,263,140,10
@@ -248,7 +277,9 @@ END
 // Icon with lowest ID value placed first to ensure application icon
 // remains consistent on all systems.
 IDR_MAINFRAME           ICON                    "res\\CadSurf.ico"
+
 IDR_CADSURTYPE          ICON                    "res\\CadSurfDoc.ico"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -256,11 +287,17 @@ IDR_CADSURTYPE          ICON                    "res\\CadSurfDoc.ico"
 //
 
 IDR_MAINFRAME           BITMAP                  "res\\Toolbar.bmp"
+
 IDR_TB_GEOM             BITMAP                  "res\\tb_geom.bmp"
+
 IDR_CHILDFRAME          BITMAP                  "res\\toolbar1.bmp"
+
 IDR_TB_TRN              BITMAP                  "res\\bmp00001.bmp"
+
 IDB_SPLASH              BITMAP                  "res\\new_splash.bmp"
+
 IDB_SMALLSPLASH         BITMAP                  "res\\new_splash_small.bmp"
+
 
 /////////////////////////////////////////////////////////////////////////////
 //

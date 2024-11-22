@@ -6,13 +6,17 @@
 
 #include "CadSurfDoc.h"
 #include "CadSurfView.h"
- #include "ChildFrm.h" 
+#include "ChildFrm.h" 
 #include "Light.h"
 
 
 #include "GLView.h"
 #include "COMMAND.H"
 #include "CREATECMD.H"
+
+#include "Input.h"
+
+#include <string>
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -28,6 +32,7 @@ IMPLEMENT_DYNCREATE(CCadSurfView, CView)
 BEGIN_MESSAGE_MAP(CCadSurfView, CView)
 	//{{AFX_MSG_MAP(CCadSurfView)
 	ON_WM_LBUTTONDOWN()
+	ON_WM_LBUTTONDBLCLK()
 	ON_WM_LBUTTONUP()
 	ON_WM_MBUTTONDOWN()
 	ON_WM_MBUTTONUP()
@@ -123,10 +128,10 @@ CCadSurfView::CCadSurfView()
 	gridOn = false;
 	coord.Format("");
 	view.Format(_T("AXO"));
-	m_Pen = new CPen(PS_SOLID, 2, RGB(0,0,0));
+	m_Pen = new CPen(PS_SOLID, 2, RGB(0, 0, 0));
 
-	hDIB	   = NULL;
-	m_palDIB   = new CPalette;
+	hDIB = NULL;
+	m_palDIB = new CPalette;
 	m_nSaveBMPFlag = BMPCLIENT;
 
 	m_pCmd = NULL;
@@ -134,18 +139,18 @@ CCadSurfView::CCadSurfView()
 
 CCadSurfView::~CCadSurfView()
 {
-	if( m_pCmd )
-		delete m_pCmd ;
+	if (m_pCmd)
+		delete m_pCmd;
 
 	delete m_Pen;
 
 	//printing
-	if( hDIB != NULL )
-    {
-        ::GlobalUnlock(hDIB);
-	    ::GlobalFree(hDIB);
-	    hDIB = NULL;
-	}  
+	if (hDIB != NULL)
+	{
+		::GlobalUnlock(hDIB);
+		::GlobalFree(hDIB);
+		hDIB = NULL;
+	}
 	if (m_palDIB != NULL)
 	{
 		delete m_palDIB;
@@ -161,20 +166,20 @@ BOOL CCadSurfView::PreCreateWindow(CREATESTRUCT& cs)
 	return CView::PreCreateWindow(cs);
 }
 
-int CCadSurfView::OnCreate(LPCREATESTRUCT lpCreateStruct) 
+int CCadSurfView::OnCreate(LPCREATESTRUCT lpCreateStruct)
 {
 	if (CView::OnCreate(lpCreateStruct) == -1)
 		return -1;
-	
+
 	// TODO: Add your specialized creation code here
 	myView = new CGLView(this, GetDocument()->dContext);
 	return 0;
 }
 
-void CCadSurfView::OnDestroy() 
+void CCadSurfView::OnDestroy()
 {
 	CView::OnDestroy();
-	
+
 	// TODO: Add your message handler code here
 	delete myView;
 }
@@ -187,17 +192,17 @@ void CCadSurfView::OnDraw(CDC* pDC)
 	CCadSurfDoc* pDoc = GetDocument();
 	ASSERT_VALID(pDoc);
 	// TODO: add draw code for native data here
-	if (pDC->IsPrinting()) 
+	if (pDC->IsPrinting())
 		PrintDIB(pDC);
 	else
 	{
-		::glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT ); 
+		::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		myView->Draw();
 		myView->SwapBuffers();
 		//GDI
 		pDC->SetBkMode(0);
-		pDC->SetTextColor(RGB(255,255,0));
-		pDC->TextOut(1,1, view);
+		pDC->SetTextColor(RGB(255, 255, 0));
+		pDC->TextOut(1, 1, view);
 	}
 }
 
@@ -246,50 +251,191 @@ CCadSurfDoc* CCadSurfView::GetDocument() // non-debug version is inline
 /////////////////////////////////////////////////////////////////////////////
 // CCadSurfView message handlers
 
-void CCadSurfView::OnInitialUpdate() 
+void CCadSurfView::OnInitialUpdate()
 {
 	CView::OnInitialUpdate();
-	SetTimer(1,1000,NULL);
+	SetTimer(1, 1000, NULL);
 	// TODO: Add your specialized code here and/or call the base class
-	
+
 }
 
-void CCadSurfView::OnSize(UINT nType, int cx, int cy) 
+void CCadSurfView::OnSize(UINT nType, int cx, int cy)
 {
 	CView::OnSize(nType, cx, cy);
-	
+
 	// TODO: Add your message handler code here
-	if(myView)
+	if (myView)
 		myView->ReSize(cx, cy);
 }
 
-void CCadSurfView::OnTimer(UINT nIDEvent) 
+void CCadSurfView::OnTimer(UINT nIDEvent)
 {
 	// TODO: Add your message handler code here and/or call default
 	CView::OnTimer(nIDEvent);
 }
 
-void CCadSurfView::OnLButtonDown(UINT nFlags, CPoint point) 
+void CCadSurfView::OnLButtonDblClk(UINT nFlags, CPoint point)
+{
+	SetCapture();
+	//myView->Select(point.x, point.y);
+
+	CGLObject* sel_obj = myView->CurrentSelected();
+	CGLPoint* sel_pt = dynamic_cast<CGLPoint*>(sel_obj);
+	if (sel_pt) {
+		auto itr = GetDocument()->bsp_mgr.mm_glpoint.find(sel_pt->GetObjID());
+		if (itr != GetDocument()->bsp_mgr.mm_glpoint.end()) {
+			ASSERT(itr->second.first->GetObjID() == sel_pt->GetObjID());
+			Input ip(this);
+			CPoint3D* pt3d = (CPoint3D*)sel_pt->Geometry();
+
+			std::string tmp = "x:" + std::to_string(pt3d->GetX())
+				+ ";y:" + std::to_string(pt3d->GetY()) + ";z:" + std::to_string(pt3d->GetZ());
+			ip.str = tmp.c_str();
+			auto ret = ip.DoModal();
+			if (ret == 1) {
+				CString rString = ip.str;
+
+				int nCurPos = 0;
+
+				std::vector<double> vec_num;
+				CString strSep(_T(";"));
+				CString strSub = rString.Tokenize(strSep, nCurPos);
+				auto num_len = strSub.GetLength() - strSub.Find(":") - 1;
+				auto rr = strSub.Right(num_len).Trim();
+				double a = atof(rr.GetString());
+				vec_num.push_back(a);
+
+				while (strSub != _T(""))
+				{
+					strSub.Trim();
+					strSub = rString.Tokenize(strSep, nCurPos);
+					if (strSub != _T(""))
+					{
+						auto num_len = strSub.GetLength() - strSub.Find(":") - 1;
+						auto rr = strSub.Right(num_len).Trim();
+						double a = atof(rr.GetString());
+						vec_num.push_back(a);
+					}
+				}
+
+				int idx = itr->second.second;
+
+				CPoint3D& newpt =GetDocument()->bsp_mgr.vec_CPoint3D[idx];
+				newpt.SetX(vec_num[0]);
+				newpt.SetY(vec_num[1]);
+				newpt.SetZ(vec_num[2]);
+
+				GetDocument()->bsp_mgr.Display(GetDocument()->dContext);
+				return;
+			}
+		}
+	}
+	CGLCurve* sel_curve = dynamic_cast<CGLCurve*>(sel_obj);
+	if (sel_curve) {
+		CGLCurve* target_curve = GetDocument()->bsp_mgr.gCRV;
+		if (target_curve && target_curve->GetObjID() == sel_curve->GetObjID()) {
+			
+			int nEnbale = GetDocument()->bsp_mgr.enable_stretch_face ? 1 : 0;
+
+			std::string tmp = "enable face:" + std::to_string(nEnbale);
+			Input ip(this);
+			ip.str = tmp.c_str();
+			auto ret = ip.DoModal();
+			if (ret == 1) {
+				CString rString = ip.str;
+				auto num_len = rString.GetLength() - rString.Find(":") - 1;
+				auto rr = rString.Right(num_len).Trim();
+				int a = atoi(rr.GetString());
+				if (nEnbale != a) {
+					if (a == 1) {
+						GetDocument()->bsp_mgr.enable_stretch_face = true;
+					}
+					else {
+						GetDocument()->bsp_mgr.enable_stretch_face = false;
+					}
+					GetDocument()->bsp_mgr.Display(GetDocument()->dContext);
+					return;
+				}
+			}
+
+			
+
+		}
+	}
+	CGLSurface* sel_surface = dynamic_cast<CGLSurface*>(sel_obj);
+	if (sel_surface) {
+		CGLSurface* target_surface = GetDocument()->bsp_mgr.stretch_face;
+		if (target_surface && target_surface->GetObjID() == sel_surface->GetObjID()) {
+			CVector3D& dir = GetDocument()->bsp_mgr.stretch_dir;
+			unsigned long int& len = GetDocument()->bsp_mgr.stretch_len;
+			std::string tmp = "dir_x:" + std::to_string(dir.GetX())
+				+ ";dir_y:" + std::to_string(dir.GetY())
+				+ ";dir_z:" + std::to_string(dir.GetZ())
+				+ ";len:" + std::to_string(len);
+
+			Input ip(this);
+			ip.str = tmp.c_str();
+			auto ret = ip.DoModal();
+			if (ret == 1) {
+				CString rString = ip.str;
+
+				int nCurPos = 0;
+
+				std::vector<double> vec_num;
+				CString strSep(_T(";"));
+				CString strSub = rString.Tokenize(strSep, nCurPos);
+				auto num_len = strSub.GetLength() - strSub.Find(":") - 1;
+				auto rr = strSub.Right(num_len).Trim();
+				double a = atof(rr.GetString());
+				vec_num.push_back(a);
+
+				while (strSub != _T(""))
+				{
+					strSub.Trim();
+					strSub = rString.Tokenize(strSep, nCurPos);
+					if (strSub != _T(""))
+					{
+						auto num_len = strSub.GetLength() - strSub.Find(":") - 1;
+						auto rr = strSub.Right(num_len).Trim();
+						double a = atof(rr.GetString());
+						vec_num.push_back(a);
+					}
+				}
+
+				dir.SetX(vec_num[0]);
+				dir.SetY(vec_num[1]);
+				dir.SetZ(vec_num[2]);
+				len = (unsigned long int)vec_num[3];
+				GetDocument()->bsp_mgr.Display(GetDocument()->dContext);
+				return;
+			}
+		}
+	}
+
+	CView::OnLButtonDown(nFlags, point);
+}
+
+void CCadSurfView::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: Add your message handler code here and/or call default
 
 	// ask window to give us events even if outside the view
-    SetCapture();
+	SetCapture();
 
 	//如果草图绘制;
 	if (m_pCmd)
 	{
 		CPoint3D pt3d;
 		myView->ScreenToPoint(point.x, point.y, pt3d);
-// 		//处理一下，根据视图;
-// 		if (myView->GetViewType() == GLFRONTVIEW) //FRONT
-// 		{
-// 			pt3d.SetY(pt3d.GetZ());
-// 		}
-// 		else if (myView->GetViewType() == GLLEFTVIEW) //LEFT
-// 		{
-// 			pt3d.SetX(pt3d.GetZ());
-// 		}
+		// 		//处理一下，根据视图;
+		// 		if (myView->GetViewType() == GLFRONTVIEW) //FRONT
+		// 		{
+		// 			pt3d.SetY(pt3d.GetZ());
+		// 		}
+		// 		else if (myView->GetViewType() == GLLEFTVIEW) //LEFT
+		// 		{
+		// 			pt3d.SetX(pt3d.GetZ());
+		// 		}
 
 		m_pCmd->OnLButtonDown(nFlags, pt3d);
 		CView::OnLButtonDown(nFlags, point);
@@ -297,12 +443,12 @@ void CCadSurfView::OnLButtonDown(UINT nFlags, CPoint point)
 	}
 
 	//  save the current mouse coordinate in min 
-	myXmin=point.x;  myYmin=point.y;
-	myXmax=point.x;  myYmax=point.y;
+	myXmin = point.x;  myYmin = point.y;
+	myXmax = point.x;  myYmax = point.y;
 
 	lbutdown = true;
 	lDownPnt = point;
-	if(!(nFlags & MK_SHIFT) && !(nFlags & MK_CONTROL) && !winZoom)
+	if (!(nFlags & MK_SHIFT) && !(nFlags & MK_CONTROL) && !winZoom)
 	{
 		myView->Select(point.x, point.y);
 		InvalidateRect(NULL, FALSE);
@@ -315,7 +461,7 @@ void CCadSurfView::OnLButtonDown(UINT nFlags, CPoint point)
 	CView::OnLButtonDown(nFlags, point);
 }
 
-void CCadSurfView::OnLButtonUp(UINT nFlags, CPoint point) 
+void CCadSurfView::OnLButtonUp(UINT nFlags, CPoint point)
 {
 	if (m_pCmd)
 	{
@@ -328,23 +474,23 @@ void CCadSurfView::OnLButtonUp(UINT nFlags, CPoint point)
 	lbutdown = false;
 	myView->StopZooming();
 
-	if(!(nFlags & MK_SHIFT) && !(nFlags & MK_CONTROL) && !winZoom)
+	if (!(nFlags & MK_SHIFT) && !(nFlags & MK_CONTROL) && !winZoom)
 	{
 		DrawRectangle(false);
 		CRect rect(lDownPnt, point);
 		rect.NormalizeRect();
-		if(rect.Width() && rect.Height())
+		if (rect.Width() && rect.Height())
 			myView->SweepSelect(rect);
 		InvalidateRect(NULL, FALSE);
 	}
 
-	if(winZoom)
+	if (winZoom)
 	{
-		myXmax=point.x;  myYmax=point.y;
+		myXmax = point.x;  myYmax = point.y;
 		DrawRectangle(false);
 		CRect myZoomRect(myXmin, myYmax, myXmax, myYmin);
-		if ((abs(myXmin-myXmax)>1) || (abs(myYmin-myYmax)>1))
-		// Test if the zoom window size is not null
+		if ((abs(myXmin - myXmax) > 1) || (abs(myYmin - myYmax) > 1))
+			// Test if the zoom window size is not null
 		{
 			myView->ZoomWindow(myZoomRect);
 		}
@@ -356,7 +502,7 @@ void CCadSurfView::OnLButtonUp(UINT nFlags, CPoint point)
 	CView::OnLButtonUp(nFlags, point);
 }
 
-void CCadSurfView::OnMButtonDown(UINT nFlags, CPoint point) 
+void CCadSurfView::OnMButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: Add your message handler code here and/or call default
 	mbutdown = true;
@@ -364,7 +510,7 @@ void CCadSurfView::OnMButtonDown(UINT nFlags, CPoint point)
 	CView::OnMButtonDown(nFlags, point);
 }
 
-void CCadSurfView::OnMButtonUp(UINT nFlags, CPoint point) 
+void CCadSurfView::OnMButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: Add your message handler code here and/or call default
 	mbutdown = false;
@@ -372,7 +518,7 @@ void CCadSurfView::OnMButtonUp(UINT nFlags, CPoint point)
 	CView::OnMButtonUp(nFlags, point);
 }
 
-void CCadSurfView::OnRButtonDown(UINT nFlags, CPoint point) 
+void CCadSurfView::OnRButtonDown(UINT nFlags, CPoint point)
 {
 	// TODO: Add your message handler code here and/or call default
 	rbutdown = true;
@@ -380,7 +526,7 @@ void CCadSurfView::OnRButtonDown(UINT nFlags, CPoint point)
 	CView::OnRButtonDown(nFlags, point);
 }
 
-void CCadSurfView::OnRButtonUp(UINT nFlags, CPoint point) 
+void CCadSurfView::OnRButtonUp(UINT nFlags, CPoint point)
 {
 	// TODO: Add your message handler code here and/or call default
 	rbutdown = false;
@@ -388,40 +534,40 @@ void CCadSurfView::OnRButtonUp(UINT nFlags, CPoint point)
 	CView::OnRButtonUp(nFlags, point);
 }
 
-void CCadSurfView::OnMouseMove(UINT nFlags, CPoint point) 
+void CCadSurfView::OnMouseMove(UINT nFlags, CPoint point)
 {
 	if (m_pCmd)
 	{
 		CPoint3D pt3d;
 		myView->ScreenToPoint(point.x, point.y, pt3d);
-// 		//处理一下，根据视图;
-// 		if (myView->GetViewType() == GLFRONTVIEW) //FRONT
-// 		{
-// 			pt3d.SetY(pt3d.GetZ());
-// 		}
-// 		else if (myView->GetViewType() == GLLEFTVIEW) //LEFT
-// 		{
-// 			pt3d.SetX(pt3d.GetZ());
-// 		}
+		// 		//处理一下，根据视图;
+		// 		if (myView->GetViewType() == GLFRONTVIEW) //FRONT
+		// 		{
+		// 			pt3d.SetY(pt3d.GetZ());
+		// 		}
+		// 		else if (myView->GetViewType() == GLLEFTVIEW) //LEFT
+		// 		{
+		// 			pt3d.SetX(pt3d.GetZ());
+		// 		}
 		m_pCmd->OnMouseMove(nFlags, pt3d);
 		CView::OnMouseMove(nFlags, point);
 		return;
 	}
 
 	// TODO: Add your message handler code here and/or call default
-	if(lbutdown && (nFlags & MK_CONTROL))
+	if (lbutdown && (nFlags & MK_CONTROL))
 	{
 		myView->ZoomView(lDownPnt, point);
 		Invalidate(FALSE);
 	}
-	if(mbutdown && (nFlags & MK_CONTROL))
+	if (mbutdown && (nFlags & MK_CONTROL))
 	{
 		myView->PanView(mDownPnt, point);
 		Invalidate(FALSE);
 	}
-	if(rbutdown && (nFlags & MK_CONTROL))
+	if (rbutdown && (nFlags & MK_CONTROL))
 	{
-		if(myView->GetViewType() == GLAXONVIEW || myView->GetViewType() == GLUNDEFINEDVIEW)
+		if (myView->GetViewType() == GLAXONVIEW || myView->GetViewType() == GLUNDEFINEDVIEW)
 		{
 			myView->RotateView(rDownPnt, point);
 			Invalidate(FALSE);
@@ -429,83 +575,83 @@ void CCadSurfView::OnMouseMove(UINT nFlags, CPoint point)
 		else
 			coord.Format("Rotation Allowed Only In Axonometric View");
 	}
-	if(lbutdown && !(nFlags & MK_CONTROL) && !(nFlags & MK_SHIFT))
+	if (lbutdown && !(nFlags & MK_CONTROL) && !(nFlags & MK_SHIFT))
 	{
-		myXmax = point.x; myYmax = point.y;	
-		DrawRectangle(true,LongDash);
+		myXmax = point.x; myYmax = point.y;
+		DrawRectangle(true, LongDash);
 	}
 
 	CPoint3D C;
 	myView->ScreenToPoint(point.x, point.y, C);
-	coord.Format("X %0.3lf  Y %0.3lf  Z%0.3lf",C.GetX(), C.GetY(), C.GetZ());
+	coord.Format("X %0.3lf  Y %0.3lf  Z%0.3lf", C.GetX(), C.GetY(), C.GetZ());
 
 	CView::OnMouseMove(nFlags, point);
 }
 
 
 
-void CCadSurfView::OnTopview() 
+void CCadSurfView::OnTopview()
 {
 	// TODO: Add your command handler code here
 	myView->TopView();
 	view.Format(_T("TOP"));
 }
 
-void CCadSurfView::OnBottomview() 
+void CCadSurfView::OnBottomview()
 {
 	// TODO: Add your command handler code here
 	myView->BottomView();
 	view.Format(_T("BOTTOM"));
 }
 
-void CCadSurfView::OnFrontview() 
+void CCadSurfView::OnFrontview()
 {
 	// TODO: Add your command handler code here
 	myView->FrontView();
 	view.Format(_T("FRONT"));
 }
 
-void CCadSurfView::OnBackview() 
+void CCadSurfView::OnBackview()
 {
 	// TODO: Add your command handler code here
 	myView->BackView();
 	view.Format(_T("BACK"));
 }
 
-void CCadSurfView::OnLeftview() 
+void CCadSurfView::OnLeftview()
 {
 	// TODO: Add your command handler code here
 	myView->LeftView();
 	view.Format(_T("LEFT"));
 }
 
-void CCadSurfView::OnRightview() 
+void CCadSurfView::OnRightview()
 {
 	// TODO: Add your command handler code here
 	myView->RightView();
 	view.Format(_T("RIGHT"));
 }
 
-void CCadSurfView::OnAxonview() 
+void CCadSurfView::OnAxonview()
 {
 	// TODO: Add your command handler code here
 	myView->AxonView();
 	view.Format(_T("AXO"));
 }
 
-void CCadSurfView::OnFitall() 
+void CCadSurfView::OnFitall()
 {
 	// TODO: Add your command handler code here
 	myView->FitAll();
 }
 
-void CCadSurfView::OnZoomwin() 
+void CCadSurfView::OnZoomwin()
 {
 	// TODO: Add your command handler code here
 	winZoom = true;
 }
 
-void CCadSurfView::OnResetview() 
+void CCadSurfView::OnResetview()
 {
 	// TODO: Add your command handler code here
 	myView->ResetView();
@@ -513,53 +659,53 @@ void CCadSurfView::OnResetview()
 }
 
 
-void CCadSurfView::OnDisplaymode() 
+void CCadSurfView::OnDisplaymode()
 {
 	// TODO: Add your command handler code here
 	dShaded = !dShaded;
-	if(dShaded)
+	if (dShaded)
 	{
 		POSITION pos = GetDocument()->GetFirstViewPosition();
-		while(pos != NULL)
+		while (pos != NULL)
 		{
-			CCadSurfView* view = (CCadSurfView*) GetDocument()->GetNextView(pos);
+			CCadSurfView* view = (CCadSurfView*)GetDocument()->GetNextView(pos);
 			view->GetView()->SetDisplayMode(GLSHADED);
 		}
 	}
 	else
 	{
 		POSITION pos = GetDocument()->GetFirstViewPosition();
-		while(pos != NULL)
+		while (pos != NULL)
 		{
-			CCadSurfView* view = (CCadSurfView*) GetDocument()->GetNextView(pos);
+			CCadSurfView* view = (CCadSurfView*)GetDocument()->GetNextView(pos);
 			view->GetView()->SetDisplayMode(GLWIREFRAME);
 		}
 	}
 }
 
-void CCadSurfView::OnUpdateDisplaymode(CCmdUI* pCmdUI) 
+void CCadSurfView::OnUpdateDisplaymode(CCmdUI* pCmdUI)
 {
 	// TODO: Add your command update UI handler code here
 }
 
-void CCadSurfView::OnHlremoved() 
+void CCadSurfView::OnHlremoved()
 {
 	// TODO: Add your command handler code here
 	POSITION pos = GetDocument()->GetFirstViewPosition();
-	while(pos != NULL)
+	while (pos != NULL)
 	{
-		CCadSurfView* view = (CCadSurfView*) GetDocument()->GetNextView(pos);
+		CCadSurfView* view = (CCadSurfView*)GetDocument()->GetNextView(pos);
 		view->GetView()->SetDisplayMode(GLHLREMOVED);
 	}
 }
 
-void CCadSurfView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint) 
+void CCadSurfView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 {
 	// TODO: Add your specialized code here and/or call the base class
 	POSITION pos = GetDocument()->GetFirstViewPosition();
-	while(pos != NULL)
+	while (pos != NULL)
 	{
-		CCadSurfView* view = (CCadSurfView*) GetDocument()->GetNextView(pos);
+		CCadSurfView* view = (CCadSurfView*)GetDocument()->GetNextView(pos);
 		view->GetView()->Refresh();
 	}
 	CView::OnUpdate(pSender, lHint, pHint);
@@ -567,52 +713,52 @@ void CCadSurfView::OnUpdate(CView* pSender, LPARAM lHint, CObject* pHint)
 }
 
 
-void CCadSurfView::OnViewDisplayall() 
+void CCadSurfView::OnViewDisplayall()
 {
 	// TODO: Add your command handler code here
 	GetDocument()->dContext->DisplayAll();
 }
 
-void CCadSurfView::OnUpdateViewDisplayall(CCmdUI* pCmdUI) 
+void CCadSurfView::OnUpdateViewDisplayall(CCmdUI* pCmdUI)
 {
 	// TODO: Add your command update UI handler code here
 	pCmdUI->Enable(!GetDocument()->dContext->IsAllDisplayed());
 }
 
-void CCadSurfView::OnViewEraseall() 
+void CCadSurfView::OnViewEraseall()
 {
 	// TODO: Add your command handler code here
 	GetDocument()->dContext->EraseAll();
 }
 
-void CCadSurfView::OnUpdateViewEraseall(CCmdUI* pCmdUI) 
+void CCadSurfView::OnUpdateViewEraseall(CCmdUI* pCmdUI)
 {
 	// TODO: Add your command update UI handler code here
 	pCmdUI->Enable(!GetDocument()->dContext->IsAllErased());
 }
 
-void CCadSurfView::OnViewDisplayselected() 
+void CCadSurfView::OnViewDisplayselected()
 {
 	// TODO: Add your command handler code here
 	CGLDisplayContext* ctx = GetDocument()->dContext;
 	ctx->DisplaySelected();
 }
 
-void CCadSurfView::OnUpdateViewDisplayselected(CCmdUI* pCmdUI) 
+void CCadSurfView::OnUpdateViewDisplayselected(CCmdUI* pCmdUI)
 {
 	// TODO: Add your command update UI handler code here
 	CGLDisplayContext* ctx = GetDocument()->dContext;
 	pCmdUI->Enable(ctx->HasSelected());
 }
 
-void CCadSurfView::OnViewEraseselected() 
+void CCadSurfView::OnViewEraseselected()
 {
 	// TODO: Add your command handler code here
 	CGLDisplayContext* ctx = GetDocument()->dContext;
 	ctx->EraseSelected();
 }
 
-void CCadSurfView::OnUpdateViewEraseselected(CCmdUI* pCmdUI) 
+void CCadSurfView::OnUpdateViewEraseselected(CCmdUI* pCmdUI)
 {
 	// TODO: Add your command update UI handler code here
 	CGLDisplayContext* ctx = GetDocument()->dContext;
@@ -621,63 +767,63 @@ void CCadSurfView::OnUpdateViewEraseselected(CCmdUI* pCmdUI)
 
 void CCadSurfView::OnUpdateCoordViewer(CCmdUI* pCmdUI)
 {
-	if(myView->GetViewType() == GLAXONVIEW || myView->GetViewType() == GLUNDEFINEDVIEW)
+	if (myView->GetViewType() == GLAXONVIEW || myView->GetViewType() == GLUNDEFINEDVIEW)
 		pCmdUI->SetText(_T(""));
 	else
 		pCmdUI->SetText((LPCTSTR)coord);
 }
 
-void CCadSurfView::OnPreferencesDisplaymodeShaded() 
+void CCadSurfView::OnPreferencesDisplaymodeShaded()
 {
 	// TODO: Add your command handler code here
 	dShaded = true;
 	POSITION pos = GetDocument()->GetFirstViewPosition();
-	while(pos != NULL)
+	while (pos != NULL)
 	{
-		CCadSurfView* view = (CCadSurfView*) GetDocument()->GetNextView(pos);
+		CCadSurfView* view = (CCadSurfView*)GetDocument()->GetNextView(pos);
 		view->GetView()->SetDisplayMode(GLSHADED);
-	}		
+	}
 }
 
-void CCadSurfView::OnPreferencesDisplaymodeWireframe() 
+void CCadSurfView::OnPreferencesDisplaymodeWireframe()
 {
 	// TODO: Add your command handler code here
 	dShaded = false;
 	POSITION pos = GetDocument()->GetFirstViewPosition();
-	while(pos != NULL)
+	while (pos != NULL)
 	{
-		CCadSurfView* view = (CCadSurfView*) GetDocument()->GetNextView(pos);
+		CCadSurfView* view = (CCadSurfView*)GetDocument()->GetNextView(pos);
 		view->GetView()->SetDisplayMode(GLWIREFRAME);
 	}
 }
 
-void CCadSurfView::OnUpdatePreferencesDisplaymodeWireframe(CCmdUI* pCmdUI) 
+void CCadSurfView::OnUpdatePreferencesDisplaymodeWireframe(CCmdUI* pCmdUI)
 {
 	// TODO: Add your command update UI handler code here
 	pCmdUI->SetCheck(!dShaded);
 }
 
-void CCadSurfView::OnAntialias() 
+void CCadSurfView::OnAntialias()
 {
 	// TODO: Add your command handler code here
 	antialiased = !antialiased;
 	POSITION pos = GetDocument()->GetFirstViewPosition();
-	while(pos != NULL)
+	while (pos != NULL)
 	{
-		CCadSurfView* view = (CCadSurfView*) GetDocument()->GetNextView(pos);
+		CCadSurfView* view = (CCadSurfView*)GetDocument()->GetNextView(pos);
 		view->GetView()->SetAntiAliasing(antialiased);
 	}
 }
 
 #include "MaterialDlg.h"
-void CCadSurfView::OnPreferencesMaterial() 
+void CCadSurfView::OnPreferencesMaterial()
 {
 	// TODO: Add your command handler code here
 	CMaterialDlg dlg;
-	if(dlg.DoModal() == IDOK)
+	if (dlg.DoModal() == IDOK)
 	{
 		CGLDisplayContext* ctx = GetDocument()->dContext;
-		for(ctx->InitSelected(); ctx->MoreSelected(); ctx->NextSelected())
+		for (ctx->InitSelected(); ctx->MoreSelected(); ctx->NextSelected())
 		{
 			CGLObject* O = ctx->CurrentSelected();
 			O->SetLight(dlg.m_Matl);
@@ -687,27 +833,27 @@ void CCadSurfView::OnPreferencesMaterial()
 	}
 }
 
-void CCadSurfView::OnUpdatePreferencesMaterial(CCmdUI* pCmdUI) 
+void CCadSurfView::OnUpdatePreferencesMaterial(CCmdUI* pCmdUI)
 {
 	// TODO: Add your command update UI handler code here
 	CGLDisplayContext* ctx = GetDocument()->dContext;
 	pCmdUI->Enable(ctx->HasSelected() && dShaded);
 }
 
-void CCadSurfView::OnPreferencesColor() 
+void CCadSurfView::OnPreferencesColor()
 {
 	// TODO: Add your command handler code here
 	CColorDialog dlg;
 	dlg.m_cc.Flags |= CC_RGBINIT;
 	dlg.m_cc.rgbResult = RGB(255, 0, 0);
-	if(dlg.DoModal()==IDOK)
+	if (dlg.DoModal() == IDOK)
 	{
 		COLORREF color = dlg.GetColor();
-		GLubyte m_Red = (GLubyte) GetRValue(color);
-		GLubyte m_Green = (GLubyte) GetGValue(color);
-		GLubyte m_Blue = (GLubyte) GetBValue(color);
+		GLubyte m_Red = (GLubyte)GetRValue(color);
+		GLubyte m_Green = (GLubyte)GetGValue(color);
+		GLubyte m_Blue = (GLubyte)GetBValue(color);
 		CGLDisplayContext* ctx = GetDocument()->dContext;
-		for(ctx->InitSelected(); ctx->MoreSelected(); ctx->NextSelected())
+		for (ctx->InitSelected(); ctx->MoreSelected(); ctx->NextSelected())
 		{
 			CGLObject* O = ctx->CurrentSelected();
 			O->SetColor(m_Red, m_Green, m_Blue);
@@ -717,21 +863,21 @@ void CCadSurfView::OnPreferencesColor()
 	}
 }
 
-void CCadSurfView::OnUpdatePreferencesColor(CCmdUI* pCmdUI) 
+void CCadSurfView::OnUpdatePreferencesColor(CCmdUI* pCmdUI)
 {
 	// TODO: Add your command update UI handler code here
 	CGLDisplayContext* ctx = GetDocument()->dContext;
 	pCmdUI->Enable(ctx->HasSelected());
 }
 
-void CCadSurfView::OnPreferencesLinestyleSolid() 
+void CCadSurfView::OnPreferencesLinestyleSolid()
 {
 	// TODO: Add your command handler code here
 	CGLDisplayContext* ctx = GetDocument()->dContext;
-	for(ctx->InitSelected(); ctx->MoreSelected(); ctx->NextSelected())
+	for (ctx->InitSelected(); ctx->MoreSelected(); ctx->NextSelected())
 	{
 		CGLObject* O = ctx->CurrentSelected();
-		if(O->IsOfType(GLCURVE))
+		if (O->IsOfType(GLCURVE))
 		{
 			CGLCurve* crv = static_cast<CGLCurve*>(O);
 			crv->SetLineStyle(LINE_SOLID);
@@ -740,14 +886,14 @@ void CCadSurfView::OnPreferencesLinestyleSolid()
 	InvalidateRect(NULL, FALSE);
 }
 
-void CCadSurfView::OnPreferencesLinestyleDotted() 
+void CCadSurfView::OnPreferencesLinestyleDotted()
 {
 	// TODO: Add your command handler code here
 	CGLDisplayContext* ctx = GetDocument()->dContext;
-	for(ctx->InitSelected(); ctx->MoreSelected(); ctx->NextSelected())
+	for (ctx->InitSelected(); ctx->MoreSelected(); ctx->NextSelected())
 	{
 		CGLObject* O = ctx->CurrentSelected();
-		if(O->IsOfType(GLCURVE))
+		if (O->IsOfType(GLCURVE))
 		{
 			CGLCurve* crv = static_cast<CGLCurve*>(O);
 			crv->SetLineStyle(LINE_DOTTED);
@@ -756,14 +902,14 @@ void CCadSurfView::OnPreferencesLinestyleDotted()
 	InvalidateRect(NULL, FALSE);
 }
 
-void CCadSurfView::OnPreferencesLinestyleDashed() 
+void CCadSurfView::OnPreferencesLinestyleDashed()
 {
 	// TODO: Add your command handler code here
 	CGLDisplayContext* ctx = GetDocument()->dContext;
-	for(ctx->InitSelected(); ctx->MoreSelected(); ctx->NextSelected())
+	for (ctx->InitSelected(); ctx->MoreSelected(); ctx->NextSelected())
 	{
 		CGLObject* O = ctx->CurrentSelected();
-		if(O->IsOfType(GLCURVE))
+		if (O->IsOfType(GLCURVE))
 		{
 			CGLCurve* crv = static_cast<CGLCurve*>(O);
 			crv->SetLineStyle(LINE_DASHED);
@@ -772,14 +918,14 @@ void CCadSurfView::OnPreferencesLinestyleDashed()
 	InvalidateRect(NULL, FALSE);
 }
 
-void CCadSurfView::OnPreferencesLinestyleDasheddotted() 
+void CCadSurfView::OnPreferencesLinestyleDasheddotted()
 {
 	// TODO: Add your command handler code here
 	CGLDisplayContext* ctx = GetDocument()->dContext;
-	for(ctx->InitSelected(); ctx->MoreSelected(); ctx->NextSelected())
+	for (ctx->InitSelected(); ctx->MoreSelected(); ctx->NextSelected())
 	{
 		CGLObject* O = ctx->CurrentSelected();
-		if(O->IsOfType(GLCURVE))
+		if (O->IsOfType(GLCURVE))
 		{
 			CGLCurve* crv = static_cast<CGLCurve*>(O);
 			crv->SetLineStyle(LINE_DASHDOTTED);
@@ -788,23 +934,23 @@ void CCadSurfView::OnPreferencesLinestyleDasheddotted()
 	InvalidateRect(NULL, FALSE);
 }
 
-void CCadSurfView::OnUpdatePreferencesDisplaymodeShaded(CCmdUI* pCmdUI) 
+void CCadSurfView::OnUpdatePreferencesDisplaymodeShaded(CCmdUI* pCmdUI)
 {
 	// TODO: Add your command update UI handler code here
 	pCmdUI->SetCheck(dShaded);
 }
 
-void CCadSurfView::OnPreferencesGridOn() 
+void CCadSurfView::OnPreferencesGridOn()
 {
 	// TODO: Add your command handler code here
 	gridOn = !gridOn;
 	myView->SetGridOn(gridOn);
 }
 
-void CCadSurfView::OnUpdatePreferencesGridOn(CCmdUI* pCmdUI) 
+void CCadSurfView::OnUpdatePreferencesGridOn(CCmdUI* pCmdUI)
 {
 	// TODO: Add your command update UI handler code here
-	if(!gridOn)
+	if (!gridOn)
 	{
 		pCmdUI->SetText((LPCTSTR)_T("ON"));
 	}
@@ -812,15 +958,15 @@ void CCadSurfView::OnUpdatePreferencesGridOn(CCmdUI* pCmdUI)
 	{
 		pCmdUI->SetText((LPCTSTR)_T("OFF"));
 	}
-	
+
 }
 
 #include "GridDlg.h"
-void CCadSurfView::OnPreferencesGridSettings() 
+void CCadSurfView::OnPreferencesGridSettings()
 {
 	// TODO: Add your command handler code here
 	CGridDlg dlg;
-	if(dlg.DoModal() == IDOK)
+	if (dlg.DoModal() == IDOK)
 	{
 		//GLfloat x,y,z;
 		//x=dlg.m_x;y=dlg.m_y;z=dlg.m_z;
@@ -832,114 +978,122 @@ void CCadSurfView::OnPreferencesGridSettings()
 		dz = dlg.m_DZ;
 		size = dlg.m_Size;
 		step = dlg.m_Step;
-		dy=60 ;dx=100;
-		if(dx == 0 && dy == 0 && dz == 0)
-			dz=1;
+		dy = 60; dx = 100;
+		if (dx == 0 && dy == 0 && dz == 0)
+			dz = 1;
 		CPlane plane(dx, dy, dz, 0);
 		myView->SetGridPara(plane, size, step);
 	}
 }
 
-void CCadSurfView::OnPreferencesBackgroundcolor() 
+void CCadSurfView::OnPreferencesBackgroundcolor()
 {
 	// TODO: Add your command handler code here
 	CColorDialog dlg;
 	dlg.m_cc.Flags |= CC_RGBINIT;
 	dlg.m_cc.rgbResult = RGB(0, 0, 0);
-	if(dlg.DoModal()==IDOK)
+	if (dlg.DoModal() == IDOK)
 	{
 		COLORREF color = dlg.GetColor();
-		GLfloat m_Red = (GLfloat) GetRValue(color);
-		GLfloat m_Green = (GLfloat) GetGValue(color);
-		GLfloat m_Blue = (GLfloat) GetBValue(color);
+		GLfloat m_Red = (GLfloat)GetRValue(color);
+		GLfloat m_Green = (GLfloat)GetGValue(color);
+		GLfloat m_Blue = (GLfloat)GetBValue(color);
 
 		POSITION pos = GetDocument()->GetFirstViewPosition();
-		while(pos != NULL)
+		while (pos != NULL)
 		{
-			CCadSurfView* view = (CCadSurfView*) GetDocument()->GetNextView(pos);
-			view->GetView()->SetBackgroundColor(m_Red/255, m_Green/255, m_Blue/255);
+			CCadSurfView* view = (CCadSurfView*)GetDocument()->GetNextView(pos);
+			view->GetView()->SetBackgroundColor(m_Red / 255, m_Green / 255, m_Blue / 255);
 		}
-	}	
+	}
 }
 
-void CCadSurfView::DrawRectangle(const bool  Draw , 
-                                        const LineStyle aLineStyle)
+void CCadSurfView::DrawRectangle(const bool  Draw,
+	const LineStyle aLineStyle)
 {
-    static int m_DrawMode=R2_MERGEPENNOT;
-    static		int StoredMinX, StoredMaxX, StoredMinY, StoredMaxY;
-    static		bool m_IsVisible = false;
-    static      int  StoredLineStyle= aLineStyle;
+	static int m_DrawMode = R2_MERGEPENNOT;
+	static		int StoredMinX, StoredMaxX, StoredMinY, StoredMaxY;
+	static		bool m_IsVisible = false;
+	static      int  StoredLineStyle = aLineStyle;
 
-    CPen* aOldPen;
-    CClientDC clientDC(this);
-    if (m_Pen) aOldPen = clientDC.SelectObject(m_Pen);
-    clientDC.SetROP2(m_DrawMode);
+	CPen* aOldPen;
+	CClientDC clientDC(this);
+	if (m_Pen) aOldPen = clientDC.SelectObject(m_Pen);
+	clientDC.SetROP2(m_DrawMode);
 
-    if ( m_IsVisible ) //  erase at the old position 
-    {
-     clientDC.MoveTo(StoredMinX,StoredMinY); clientDC.LineTo(StoredMinX,StoredMaxY); 
-     clientDC.LineTo(StoredMaxX,StoredMaxY); 
-	 clientDC.LineTo(StoredMaxX,StoredMinY); clientDC.LineTo(StoredMinX,StoredMinY);
-     m_IsVisible = false;
-    }
+	if (m_IsVisible) //  erase at the old position 
+	{
+		clientDC.MoveTo(StoredMinX, StoredMinY); clientDC.LineTo(StoredMinX, StoredMaxY);
+		clientDC.LineTo(StoredMaxX, StoredMaxY);
+		clientDC.LineTo(StoredMaxX, StoredMinY); clientDC.LineTo(StoredMinX, StoredMinY);
+		m_IsVisible = false;
+	}
 
-    StoredMinX = min ( myXmin, myXmax );    StoredMinY = min ( myYmin, myYmax );
-    StoredMaxX = max ( myXmin, myXmax );    StoredMaxY = max ( myYmin, myYmax);
+	StoredMinX = min(myXmin, myXmax);    StoredMinY = min(myYmin, myYmax);
+	StoredMaxX = max(myXmin, myXmax);    StoredMaxY = max(myYmin, myYmax);
 
-    if (Draw){ // move : draw
-        if (StoredLineStyle != aLineStyle) {
-            delete m_Pen;
-            if  (aLineStyle ==Solid )
-                {m_Pen = new CPen(PS_SOLID, 2, RGB(0,0,0)); m_DrawMode = R2_MERGEPENNOT;}
-            else if (aLineStyle ==Dot )
-                {m_Pen = new CPen(PS_DOT, 1, RGB(0,0,0));   m_DrawMode = R2_XORPEN;}
-            else if (aLineStyle == ShortDash)
-                {m_Pen = new CPen(PS_DASH, 1, RGB(255,0,0));	m_DrawMode = R2_XORPEN;}
-            else if (aLineStyle == LongDash)
-                {m_Pen = new CPen(PS_DASH, 1, RGB(0,0,0));	m_DrawMode = R2_NOTXORPEN;}
-            clientDC.SelectObject(m_Pen);
-        }
+	if (Draw) { // move : draw
+		if (StoredLineStyle != aLineStyle) {
+			delete m_Pen;
+			if (aLineStyle == Solid)
+			{
+				m_Pen = new CPen(PS_SOLID, 2, RGB(0, 0, 0)); m_DrawMode = R2_MERGEPENNOT;
+			}
+			else if (aLineStyle == Dot)
+			{
+				m_Pen = new CPen(PS_DOT, 1, RGB(0, 0, 0));   m_DrawMode = R2_XORPEN;
+			}
+			else if (aLineStyle == ShortDash)
+			{
+				m_Pen = new CPen(PS_DASH, 1, RGB(255, 0, 0));	m_DrawMode = R2_XORPEN;
+			}
+			else if (aLineStyle == LongDash)
+			{
+				m_Pen = new CPen(PS_DASH, 1, RGB(0, 0, 0));	m_DrawMode = R2_NOTXORPEN;
+			}
+			clientDC.SelectObject(m_Pen);
+		}
 
-     clientDC.SetROP2(m_DrawMode);
-     clientDC.MoveTo(StoredMinX,StoredMinY); clientDC.LineTo(StoredMinX,StoredMaxY); 
-     clientDC.LineTo(StoredMaxX,StoredMaxY); 
-	 clientDC.LineTo(StoredMaxX,StoredMinY); clientDC.LineTo(StoredMinX,StoredMinY);
-     m_IsVisible = true;
-   }
+		clientDC.SetROP2(m_DrawMode);
+		clientDC.MoveTo(StoredMinX, StoredMinY); clientDC.LineTo(StoredMinX, StoredMaxY);
+		clientDC.LineTo(StoredMaxX, StoredMaxY);
+		clientDC.LineTo(StoredMaxX, StoredMinY); clientDC.LineTo(StoredMinX, StoredMinY);
+		m_IsVisible = true;
+	}
 
-    if (m_Pen) clientDC.SelectObject(aOldPen);
+	if (m_Pen) clientDC.SelectObject(aOldPen);
 }
 
-void CCadSurfView::OnKillFocus(CWnd* pNewWnd) 
+void CCadSurfView::OnKillFocus(CWnd* pNewWnd)
 {
 	CView::OnKillFocus(pNewWnd);
-	
+
 	// TODO: Add your message handler code here
 	((CChildFrame*)GetParentFrame())->m_wndSplitter.RefreshSplitBars();
 }
 
-void CCadSurfView::OnSetFocus(CWnd* pOldWnd) 
+void CCadSurfView::OnSetFocus(CWnd* pOldWnd)
 {
 	CView::OnSetFocus(pOldWnd);
-	
+
 	// TODO: Add your message handler code here
 	((CChildFrame*)GetParentFrame())->m_wndSplitter.RefreshSplitBars();
 }
 
-void CCadSurfView::OnSnapshot() 
+void CCadSurfView::OnSnapshot()
 {
 	// TODO: Add your command handler code here
 	GetDIB();
-	if( hDIB == NULL )
+	if (hDIB == NULL)
 	{
 		MessageBox("HDIB handle is NULL, save abort !!!");
 		return;
 	}
-	CFileDialog  dilg(FALSE, NULL, "*.bmp", OFN_HIDEREADONLY|OFN_OVERWRITEPROMPT,
-					  "Bitmap Files (*.bmp)|*.bmp|All Files (*.*)|*.*||");
-												   
-	dilg.m_ofn.lpstrTitle="Save Bitmap Dialog";
-	if( dilg.DoModal() != IDOK )
+	CFileDialog  dilg(FALSE, NULL, "*.bmp", OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
+		"Bitmap Files (*.bmp)|*.bmp|All Files (*.*)|*.*||");
+
+	dilg.m_ofn.lpstrTitle = "Save Bitmap Dialog";
+	if (dilg.DoModal() != IDOK)
 	{
 		FreeDIB();
 		return;
@@ -950,7 +1104,7 @@ void CCadSurfView::OnSnapshot()
 	CFileException fe;
 
 	if (!file.Open(pszPathName, CFile::modeCreate |
-	  CFile::modeReadWrite | CFile::shareExclusive, &fe))
+		CFile::modeReadWrite | CFile::shareExclusive, &fe))
 	{
 		FreeDIB();
 		MessageBox("Cannot save the BMP file <" + pszPathName + "> !!!");
@@ -964,7 +1118,7 @@ void CCadSurfView::OnSnapshot()
 		bSuccess = ::SaveDIB(hDIB, (HANDLE)file.m_hFile);
 		file.Close();
 	}
-	CATCH (CException, eSave)
+		CATCH(CException, eSave)
 	{
 		file.Abort(); // will not throw an exception
 		EndWaitCursor();
@@ -973,8 +1127,8 @@ void CCadSurfView::OnSnapshot()
 		return;
 	}
 	END_CATCH
-	EndWaitCursor();
-	if (!bSuccess)  
+		EndWaitCursor();
+	if (!bSuccess)
 	{
 		FreeDIB();
 		MessageBox("Cannot save the BMP file <" + pszPathName + "> !!!");
@@ -983,7 +1137,7 @@ void CCadSurfView::OnSnapshot()
 	FreeDIB();
 }
 
-void CCadSurfView::OnFilePrint() 
+void CCadSurfView::OnFilePrint()
 {
 	// TODO: Add your command handler code here
 	m_nSaveBMPFlag = BMPCLIENT;
@@ -992,24 +1146,24 @@ void CCadSurfView::OnFilePrint()
 	CView::OnFilePrint();
 }
 
-void CCadSurfView::OnFilePrintPreview() 
+void CCadSurfView::OnFilePrintPreview()
 {
 	// TODO: Add your command handler code here
 	m_nSaveBMPFlag = BMPCLIENT;
 	GetDIB();
 
-	CView::OnFilePrintPreview();	
+	CView::OnFilePrintPreview();
 }
 
 void CCadSurfView::GetDIB()
 {
-	if(hDIB != NULL)
+	if (hDIB != NULL)
 	{
 		::GlobalUnlock(hDIB);
 		::GlobalFree(hDIB);
 		hDIB = NULL;
 	}
-	
+
 	m_nSaveBMPFlag = BMPCLIENT;
 	hDIB = ::CopyWindowToDIB(GetSafeHwnd(), m_nSaveBMPFlag);
 }
@@ -1022,55 +1176,55 @@ void CCadSurfView::FreeDIB()
 }
 
 
-void CCadSurfView::PrintDIB(CDC *pDC)
+void CCadSurfView::PrintDIB(CDC* pDC)
 {
-if(hDIB == NULL || m_palDIB == NULL) return;
+	if (hDIB == NULL || m_palDIB == NULL) return;
 
 	int cxPage = pDC->GetDeviceCaps(HORZRES);
 	int cxInch = pDC->GetDeviceCaps(LOGPIXELSX);
 	int cyInch = pDC->GetDeviceCaps(LOGPIXELSY);
-	
+
 	char* pDIB = (char*)::GlobalLock(hDIB);
-	int cxDIB  = (int)  ::DIBWidth(pDIB);
-	int cyDIB  = (int)  ::DIBHeight(pDIB);
-	if( cxDIB <= 0 || cyDIB <= 0 ) return;
+	int cxDIB = (int)  ::DIBWidth(pDIB);
+	int cyDIB = (int)  ::DIBHeight(pDIB);
+	if (cxDIB <= 0 || cyDIB <= 0) return;
 
 	RECT rcDst, rcDIB;
-	rcDIB.top    = 0;
-	rcDIB.left	 = 0;
-	rcDIB.right  = cxDIB;
+	rcDIB.top = 0;
+	rcDIB.left = 0;
+	rcDIB.right = cxDIB;
 	rcDIB.bottom = cyDIB;
-	rcDst.left   = 0;
-	rcDst.top    = 0;
-	rcDst.right  = cxPage;
+	rcDst.left = 0;
+	rcDst.top = 0;
+	rcDst.right = cxPage;
 	rcDst.bottom = (int)(1.0 * cyDIB * cxPage * cyInch / cxDIB / cxInch);
 
 	::PaintDIB(pDC->m_hDC, &rcDst, (HDIB)hDIB, &rcDIB, (HPALETTE)m_palDIB->m_hObject);
 }
 
 
-void CCadSurfView::OnProjectionType() 
+void CCadSurfView::OnProjectionType()
 {
 	// TODO: Add your command handler code here
 	POSITION pos = GetDocument()->GetFirstViewPosition();
-	while(pos != NULL)
+	while (pos != NULL)
 	{
-		CCadSurfView* view = (CCadSurfView*) GetDocument()->GetNextView(pos);
+		CCadSurfView* view = (CCadSurfView*)GetDocument()->GetNextView(pos);
 		CGLView::GLProjectionType aType = view->GetView()->GetProjectionType();
-		view->GetView()->SetProjectionType((aType == CGLView::GLORTHOGRAPHIC) ? CGLView::GLPERSPECTIVE: CGLView::GLORTHOGRAPHIC);
+		view->GetView()->SetProjectionType((aType == CGLView::GLORTHOGRAPHIC) ? CGLView::GLPERSPECTIVE : CGLView::GLORTHOGRAPHIC);
 	}
 }
 
-void CCadSurfView::OnUpdateProjectionType(CCmdUI* pCmdUI) 
+void CCadSurfView::OnUpdateProjectionType(CCmdUI* pCmdUI)
 {
 	// TODO: Add your command update UI handler code here
 	POSITION pos = GetDocument()->GetFirstViewPosition();
-	while(pos != NULL)
+	while (pos != NULL)
 	{
-		CCadSurfView* view = (CCadSurfView*) GetDocument()->GetNextView(pos);
+		CCadSurfView* view = (CCadSurfView*)GetDocument()->GetNextView(pos);
 		CGLView::GLProjectionType aType = view->GetView()->GetProjectionType();
 		pCmdUI->SetCheck((aType == CGLView::GLPERSPECTIVE));
-	}	
+	}
 }
 
 #include "LightDlg.h"
@@ -1078,25 +1232,25 @@ void CCadSurfView::OnPreferencesLight()
 {
 	// TODO: 在此添加命令处理程序代码
 	CLightDlg dlg;
-	if(dlg.DoModal() == IDOK)
+	if (dlg.DoModal() == IDOK)
 	{
-		GLfloat x,y,z,w,s,e,c;
-		x=dlg.m_x;y=dlg.m_y;z=dlg.m_z;w=dlg.m_w;s=dlg.m_s;e=dlg.m_e;c=dlg.m_c;
+		GLfloat x, y, z, w, s, e, c;
+		x = dlg.m_x; y = dlg.m_y; z = dlg.m_z; w = dlg.m_w; s = dlg.m_s; e = dlg.m_e; c = dlg.m_c;
 		CGLDisplayContext* ctx = GetDocument()->dContext;
 
-		for(ctx->InitSelected(); ctx->MoreSelected(); ctx->NextSelected())
+		for (ctx->InitSelected(); ctx->MoreSelected(); ctx->NextSelected())
 		{
 			CGLObject* O = ctx->CurrentSelected();
-			O->SetMaterial(x,y,z,w,s,e,c);
+			O->SetMaterial(x, y, z, w, s, e, c);
 		}
 		InvalidateRect(NULL, FALSE);
 		GetDocument()->UpdateAllViews(NULL);
-		
+
 	}
 }
 
 
-void CCadSurfView::OnUpdatePreferencesLight(CCmdUI *pCmdUI)
+void CCadSurfView::OnUpdatePreferencesLight(CCmdUI* pCmdUI)
 {
 	// TODO: 在此添加命令更新用户界面处理程序代码
 	CGLDisplayContext* ctx = GetDocument()->dContext;
@@ -1112,20 +1266,20 @@ void CCadSurfView::OnSkechLine()
 	m_iSketchType = 1;
 
 	//command
-	if( m_pCmd ){ 
+	if (m_pCmd) {
 		m_pCmd->Cancel();
-		delete m_pCmd ;
-		m_pCmd = NULL; 
+		delete m_pCmd;
+		m_pCmd = NULL;
 	}
 
 	m_pCmd = new CCreateLine();
 }
 
 
-void CCadSurfView::OnUpdateSkechLine(CCmdUI *pCmdUI)
+void CCadSurfView::OnUpdateSkechLine(CCmdUI* pCmdUI)
 {
 	//在关闭草图的情况下，此功能关闭;
-	pCmdUI->Enable( m_iSketchPlane != 0);
+	pCmdUI->Enable(m_iSketchPlane != 0);
 	pCmdUI->SetCheck(m_iSketchType == 1);
 }
 
@@ -1138,7 +1292,7 @@ void CCadSurfView::OnSketchXoy()
 }
 
 
-void CCadSurfView::OnUpdateSketchXoy(CCmdUI *pCmdUI)
+void CCadSurfView::OnUpdateSketchXoy(CCmdUI* pCmdUI)
 {
 	//
 	pCmdUI->SetCheck(m_iSketchPlane == 1);
@@ -1153,7 +1307,7 @@ void CCadSurfView::OnSketchXoz()
 }
 
 
-void CCadSurfView::OnUpdateSketchXoz(CCmdUI *pCmdUI)
+void CCadSurfView::OnUpdateSketchXoz(CCmdUI* pCmdUI)
 {
 	// TODO: 在此添加命令更新用户界面处理程序代码;
 	pCmdUI->SetCheck(m_iSketchPlane == 2);
@@ -1168,7 +1322,7 @@ void CCadSurfView::OnSketchYoz()
 }
 
 
-void CCadSurfView::OnUpdateSketchYoz(CCmdUI *pCmdUI)
+void CCadSurfView::OnUpdateSketchYoz(CCmdUI* pCmdUI)
 {
 	// TODO: 在此添加命令更新用户界面处理程序代码;
 	pCmdUI->SetCheck(m_iSketchPlane == 3);
@@ -1180,18 +1334,18 @@ void CCadSurfView::OnSketchClose()
 	m_iSketchPlane = 0;
 	OnResetview();
 
-	if( m_pCmd ){ 
+	if (m_pCmd) {
 		m_pCmd->Cancel();
-		delete m_pCmd ;
-		m_pCmd = NULL; 
+		delete m_pCmd;
+		m_pCmd = NULL;
 	}
 }
 
 
-void CCadSurfView::OnUpdateSketchClose(CCmdUI *pCmdUI)
+void CCadSurfView::OnUpdateSketchClose(CCmdUI* pCmdUI)
 {
 	// TODO: 在此添加命令更新用户界面处理程序代码;
-	pCmdUI->SetCheck(m_iSketchPlane ==0);
+	pCmdUI->SetCheck(m_iSketchPlane == 0);
 }
 
 
@@ -1202,7 +1356,7 @@ void CCadSurfView::OnSkechCircle()
 }
 
 
-void CCadSurfView::OnUpdateSkechCircle(CCmdUI *pCmdUI)
+void CCadSurfView::OnUpdateSkechCircle(CCmdUI* pCmdUI)
 {
 	// TODO: 在此添加命令更新用户界面处理程序代码;
 	pCmdUI->SetCheck(m_iSketchType == 2);

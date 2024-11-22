@@ -29,7 +29,7 @@
 #include "VKGraphic.h"
 
 #include "GLObject.h"
-#include <Point3D.h>
+#include "Point3D.h"
 
 class CPoint3D;
 

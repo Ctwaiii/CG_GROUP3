@@ -148,6 +148,7 @@ public:
 	void SetGridOn(const bool& mode);
 	void SetGridPara(const CPlane& plane, const double& size, const double& step);
 
+	CGLObject* CurrentSelected();
 	void Select(const int& x, const int& y);
 	void MultiSelect(const int& x, const int& y);
 	void SweepSelect(const CRect& swRect);

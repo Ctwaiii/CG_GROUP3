@@ -514,83 +514,28 @@ void CCadSurfDoc::OnBspline()
 	dContext->DeleteAll();
 
 	::CWaitCursor aCur;
-	CListOfCPoint3D *myCPList = new CListOfCPoint3D;
-	CPoint3D P1(-450,-200,-00);
-	CPoint3D P2(-350,300,-00);
-	CPoint3D P3(-200,-300,-00);
-	CPoint3D P4(-200,400,-00);
-	CPoint3D P5(200,-300,-00);
-	CPoint3D P6(300,400,-00);
-	CPoint3D P7(350,-200,-00);
-	CPoint3D P8(400,300,-00);
-	myCPList->Append(P1);
-	myCPList->Append(P2);
-	myCPList->Append(P3);
-	myCPList->Append(P4);
-	myCPList->Append(P5);
-	myCPList->Append(P6);
-	myCPList->Append(P7);
-	myCPList->Append(P8);
 
-	CGLPoint *gP1 = new CGLPoint(P1);
-	CGLPoint *gP2 = new CGLPoint(P2);
-	CGLPoint *gP3 = new CGLPoint(P3);
-	CGLPoint *gP4 = new CGLPoint(P4);
-	CGLPoint *gP5 = new CGLPoint(P5);
-	CGLPoint *gP6 = new CGLPoint(P6);
-	CGLPoint *gP7 = new CGLPoint(P7);
-	CGLPoint *gP8 = new CGLPoint(P8);
+	std::vector<CPoint3D> vec_CPoint3D;
+	CPoint3D P1(-450, -200, -00);
+	CPoint3D P2(-350, 300, -00);
+	CPoint3D P3(-200, -300, -00);
+	CPoint3D P4(-200, 400, -00);
+	CPoint3D P5(200, -300, -00);
+	CPoint3D P6(300, 400, -00);
+	CPoint3D P7(350, -200, -00);
+	CPoint3D P8(400, 300, -00);
+	vec_CPoint3D.push_back(P1);
+	vec_CPoint3D.push_back(P2);
+	vec_CPoint3D.push_back(P3);
+	vec_CPoint3D.push_back(P4);
+	vec_CPoint3D.push_back(P5);
+	vec_CPoint3D.push_back(P6);
+	vec_CPoint3D.push_back(P7);
+	vec_CPoint3D.push_back(P8);
 
-	dContext->Display(gP1);
-	dContext->Display(gP2);
-	dContext->Display(gP3);
-	dContext->Display(gP4);
-	dContext->Display(gP5);
-	dContext->Display(gP6);
-	dContext->Display(gP7);
-	dContext->Display(gP8);
-
-	CBSplineCurve B(myCPList);
-	CGLCurve* gC = new CGLCurve(&B);
-	dContext->Display(gC);
-
-	CString str;
-	str.Format("P1(%0.3lf,%0.3lf,%0.3lf)",P1.GetX(), P1.GetY(), P1.GetZ());
-	CGLFont *myFont1 = new CGLFont((LPCTSTR)str, P1);
-	str.Format("P2(%0.3lf,%0.3lf,%0.3lf)",P2.GetX(), P2.GetY(), P2.GetZ());
-	CGLFont *myFont2 = new CGLFont((LPCTSTR)str, P2);
-	str.Format("P3(%0.3lf,%0.3lf,%0.3lf)",P3.GetX(), P3.GetY(), P3.GetZ());
-	CGLFont *myFont3 = new CGLFont((LPCTSTR)str, P3);
-	str.Format("P4(%0.3lf,%0.3lf,%0.3lf)",P4.GetX(), P4.GetY(), P4.GetZ());
-	CGLFont *myFont4 = new CGLFont((LPCTSTR)str, P4);
-	str.Format("P5(%0.3lf,%0.3lf,%0.3lf)",P5.GetX(), P5.GetY(), P5.GetZ());
-	CGLFont *myFont5 = new CGLFont((LPCTSTR)str, P5);
-	str.Format("P6(%0.3lf,%0.3lf,%0.3lf)",P6.GetX(), P6.GetY(), P6.GetZ());
-	CGLFont *myFont6 = new CGLFont((LPCTSTR)str, P6);
-	str.Format("P7(%0.3lf,%0.3lf,%0.3lf)",P7.GetX(), P7.GetY(), P7.GetZ());
-	CGLFont *myFont7 = new CGLFont((LPCTSTR)str, P7);
-	str.Format("P8(%0.3lf,%0.3lf,%0.3lf)",P8.GetX(), P8.GetY(), P8.GetZ());
-	CGLFont *myFont8 = new CGLFont((LPCTSTR)str, P8);
-
-	dContext->Display(myFont1);
-	dContext->Display(myFont2);
-	dContext->Display(myFont3);
-	dContext->Display(myFont4);
-	dContext->Display(myFont5);
-	dContext->Display(myFont6);
-	dContext->Display(myFont7);
-	dContext->Display(myFont8);
-
-	myCPList->Clear();
-	delete myCPList;
-
-	delete gP1;	delete gP2;	delete gP3;	delete gP4;
-	delete gP5;	delete gP6;	delete gP7;	delete gP8;
-
-	delete gC;
-
-	delete myFont1;	delete myFont2;	delete myFont3; delete myFont4;
-	delete myFont5;	delete myFont6;	delete myFont7; delete myFont8;
+	bsp_mgr.clear();
+	bsp_mgr = BSplineCurveManager(vec_CPoint3D);
+	bsp_mgr.Display(dContext);
 }
 
 void CCadSurfDoc::OnHelix() 

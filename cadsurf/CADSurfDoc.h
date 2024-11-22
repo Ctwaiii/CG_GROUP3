@@ -77,6 +77,8 @@
 //Display Context
 #include "GLDisplayContext.h"
 
+#include "BSplineCurveManager.h"
+
 class CCadSurfDoc : public CDocument
 {
 protected: // create from serialization only
@@ -86,7 +88,7 @@ protected: // create from serialization only
 // Attributes
 public:
 	CGLDisplayContext* dContext;
-
+	BSplineCurveManager bsp_mgr;
 // Operations
 public:
 	void UpdateViews();

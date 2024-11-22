@@ -30,7 +30,7 @@
 
 #include "GLTypeEnums.h"
 #include "GLColor.h"
-#include <MMath.h>
+#include "MMath.h"
 
 class VKGRAPHIC_API CGLMaterial
 {

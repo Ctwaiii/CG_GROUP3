@@ -30,8 +30,8 @@
 
 #include "GLTypeEnums.h"
 #include "GLMaterial.h"
-#include <BoundingBox.h>
-#include <Geometry.h>
+#include "BoundingBox.h"
+#include "Geometry.h"
 
 #include <GL/gl.h>
 #include <GL/glu.h>
