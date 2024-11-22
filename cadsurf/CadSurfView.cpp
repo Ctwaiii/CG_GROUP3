@@ -15,7 +15,6 @@
 #include "CREATECMD.H"
 
 #include "Input.h"
-
 #include <string>
 
 #ifdef _DEBUG
@@ -31,8 +30,8 @@ IMPLEMENT_DYNCREATE(CCadSurfView, CView)
 
 BEGIN_MESSAGE_MAP(CCadSurfView, CView)
 	//{{AFX_MSG_MAP(CCadSurfView)
-	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONDBLCLK()
+	ON_WM_LBUTTONDOWN()
 	ON_WM_LBUTTONUP()
 	ON_WM_MBUTTONDOWN()
 	ON_WM_MBUTTONUP()
@@ -274,32 +273,41 @@ void CCadSurfView::OnTimer(UINT nIDEvent)
 	CView::OnTimer(nIDEvent);
 }
 
+
 void CCadSurfView::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
-	SetCapture();
-	//myView->Select(point.x, point.y);
+	SetCapture(); // 捕获鼠标事件，确保能够处理后续动作
 
+	// 获取当前鼠标选中的图形对象
 	CGLObject* sel_obj = myView->CurrentSelected();
-	CGLPoint* sel_pt = dynamic_cast<CGLPoint*>(sel_obj);
+
+	// **处理选中的点对象**
+	CGLPoint* sel_pt = dynamic_cast<CGLPoint*>(sel_obj); // 尝试将选中对象转换为点对象
 	if (sel_pt) {
+		// 在 bsp_mgr 的 mm_glpoint 映射表中找到该点
 		auto itr = GetDocument()->bsp_mgr.mm_glpoint.find(sel_pt->GetObjID());
 		if (itr != GetDocument()->bsp_mgr.mm_glpoint.end()) {
-			ASSERT(itr->second.first->GetObjID() == sel_pt->GetObjID());
-			Input ip(this);
-			CPoint3D* pt3d = (CPoint3D*)sel_pt->Geometry();
+			ASSERT(itr->second.first->GetObjID() == sel_pt->GetObjID()); // 验证对象 ID 一致性
 
+			// 创建输入框以显示和修改点的坐标
+			Input ip(this);
+			CPoint3D* pt3d = (CPoint3D*)sel_pt->Geometry(); // 获取点的几何数据
+
+			// 将点的当前坐标格式化为字符串
 			std::string tmp = "x:" + std::to_string(pt3d->GetX())
 				+ ";y:" + std::to_string(pt3d->GetY()) + ";z:" + std::to_string(pt3d->GetZ());
 			ip.str = tmp.c_str();
+
+			// 弹出对话框，等待用户输入新的坐标
 			auto ret = ip.DoModal();
-			if (ret == 1) {
-				CString rString = ip.str;
+			if (ret == 1) { // 如果用户确认修改
+				CString rString = ip.str; // 获取输入的字符串
 
+				// 解析用户输入的坐标值
 				int nCurPos = 0;
-
 				std::vector<double> vec_num;
 				CString strSep(_T(";"));
-				CString strSub = rString.Tokenize(strSep, nCurPos);
+				CString strSub = rString.Tokenize(strSep, nCurPos); // 按 ";" 分隔输入
 				auto num_len = strSub.GetLength() - strSub.Find(":") - 1;
 				auto rr = strSub.Right(num_len).Trim();
 				double a = atof(rr.GetString());
@@ -318,56 +326,65 @@ void CCadSurfView::OnLButtonDblClk(UINT nFlags, CPoint point)
 					}
 				}
 
+				// 更新点的坐标
 				int idx = itr->second.second;
-
-				CPoint3D& newpt =GetDocument()->bsp_mgr.vec_CPoint3D[idx];
+				CPoint3D& newpt = GetDocument()->bsp_mgr.vec_CPoint3D[idx];
 				newpt.SetX(vec_num[0]);
 				newpt.SetY(vec_num[1]);
 				newpt.SetZ(vec_num[2]);
 
+				// 重新显示场景
 				GetDocument()->bsp_mgr.Display(GetDocument()->dContext);
 				return;
 			}
 		}
 	}
+	// **处理选中的曲线对象**
 	CGLCurve* sel_curve = dynamic_cast<CGLCurve*>(sel_obj);
 	if (sel_curve) {
+		// 验证选中的曲线是否是当前管理的曲线对象
 		CGLCurve* target_curve = GetDocument()->bsp_mgr.gCRV;
 		if (target_curve && target_curve->GetObjID() == sel_curve->GetObjID()) {
-			
+
+			// 获取当前拉伸面启用状态
 			int nEnbale = GetDocument()->bsp_mgr.enable_stretch_face ? 1 : 0;
 
+			// 显示当前状态并允许用户修改
 			std::string tmp = "enable face:" + std::to_string(nEnbale);
 			Input ip(this);
 			ip.str = tmp.c_str();
 			auto ret = ip.DoModal();
-			if (ret == 1) {
+			if (ret == 1) { // 如果用户确认修改
 				CString rString = ip.str;
 				auto num_len = rString.GetLength() - rString.Find(":") - 1;
 				auto rr = rString.Right(num_len).Trim();
 				int a = atoi(rr.GetString());
 				if (nEnbale != a) {
 					if (a == 1) {
-						GetDocument()->bsp_mgr.enable_stretch_face = true;
+						GetDocument()->bsp_mgr.enable_stretch_face = true; // 启用拉伸面
 					}
 					else {
-						GetDocument()->bsp_mgr.enable_stretch_face = false;
+						GetDocument()->bsp_mgr.enable_stretch_face = false; // 禁用拉伸面
 					}
+					// 重新显示场景
 					GetDocument()->bsp_mgr.Display(GetDocument()->dContext);
 					return;
 				}
 			}
-
-			
-
 		}
 	}
+	// **处理选中的拉伸面对象**
 	CGLSurface* sel_surface = dynamic_cast<CGLSurface*>(sel_obj);
 	if (sel_surface) {
+		// 验证选中的拉伸面是否是当前管理的拉伸面对象
 		CGLSurface* target_surface = GetDocument()->bsp_mgr.stretch_face;
 		if (target_surface && target_surface->GetObjID() == sel_surface->GetObjID()) {
+
+			// 获取拉伸面的方向和长度
 			CVector3D& dir = GetDocument()->bsp_mgr.stretch_dir;
 			unsigned long int& len = GetDocument()->bsp_mgr.stretch_len;
+
+			// 显示当前方向和长度，并允许用户修改
 			std::string tmp = "dir_x:" + std::to_string(dir.GetX())
 				+ ";dir_y:" + std::to_string(dir.GetY())
 				+ ";dir_z:" + std::to_string(dir.GetZ())
@@ -376,11 +393,11 @@ void CCadSurfView::OnLButtonDblClk(UINT nFlags, CPoint point)
 			Input ip(this);
 			ip.str = tmp.c_str();
 			auto ret = ip.DoModal();
-			if (ret == 1) {
+			if (ret == 1) { // 如果用户确认修改
 				CString rString = ip.str;
 
+				// 解析用户输入的方向和长度值
 				int nCurPos = 0;
-
 				std::vector<double> vec_num;
 				CString strSep(_T(";"));
 				CString strSub = rString.Tokenize(strSep, nCurPos);
@@ -402,24 +419,25 @@ void CCadSurfView::OnLButtonDblClk(UINT nFlags, CPoint point)
 					}
 				}
 
+				// 更新方向和长度
 				dir.SetX(vec_num[0]);
 				dir.SetY(vec_num[1]);
 				dir.SetZ(vec_num[2]);
 				len = (unsigned long int)vec_num[3];
+
+				// 重新显示场景
 				GetDocument()->bsp_mgr.Display(GetDocument()->dContext);
 				return;
 			}
 		}
 	}
 
+	// 如果选中对象不是点、曲线或拉伸面，则调用父类默认处理
 	CView::OnLButtonDown(nFlags, point);
 }
 
 void CCadSurfView::OnLButtonDown(UINT nFlags, CPoint point)
 {
-	// TODO: Add your message handler code here and/or call default
-
-	// ask window to give us events even if outside the view
 	SetCapture();
 
 	//如果草图绘制;
@@ -427,27 +445,54 @@ void CCadSurfView::OnLButtonDown(UINT nFlags, CPoint point)
 	{
 		CPoint3D pt3d;
 		myView->ScreenToPoint(point.x, point.y, pt3d);
-		// 		//处理一下，根据视图;
-		// 		if (myView->GetViewType() == GLFRONTVIEW) //FRONT
-		// 		{
-		// 			pt3d.SetY(pt3d.GetZ());
-		// 		}
-		// 		else if (myView->GetViewType() == GLLEFTVIEW) //LEFT
-		// 		{
-		// 			pt3d.SetX(pt3d.GetZ());
-		// 		}
-
 		m_pCmd->OnLButtonDown(nFlags, pt3d);
 		CView::OnLButtonDown(nFlags, point);
 		return;
 	}
 
-	//  save the current mouse coordinate in min 
 	myXmin = point.x;  myYmin = point.y;
 	myXmax = point.x;  myYmax = point.y;
 
+
 	lbutdown = true;
 	lDownPnt = point;
+
+	// 将鼠标点击屏幕坐标转换为场景中的 3D 点
+	CPoint3D clickedPt;
+	myView->ScreenToPoint(point.x, point.y, clickedPt);
+
+	// 初始化最近点的变量
+	double minDistance = DBL_MAX; // 设置一个很大的初始距离
+	int closestPointIdx = -1;     // 最近点的索引
+	CPoint3D* closestPoint = nullptr;
+
+	// 遍历所有点，找到距离鼠标点击点最近的点
+	for (int i = 0; i < GetDocument()->bsp_mgr.vec_CPoint3D.size(); ++i)
+	{
+		CPoint3D& pt = GetDocument()->bsp_mgr.vec_CPoint3D[i]; // 获取控制点
+		double distance = sqrt(pow(pt.GetX() - clickedPt.GetX(), 2) +
+			pow(pt.GetY() - clickedPt.GetY(), 2) +
+			pow(pt.GetZ() - clickedPt.GetZ(), 2)); // 计算欧几里得距离
+
+		if (distance < minDistance) // 更新最近点
+		{
+			minDistance = distance;
+			closestPointIdx = i;
+			closestPoint = &pt;
+		}
+	}
+
+	// 如果找到最近点，更新其坐标为鼠标点击的坐标
+	if (closestPoint)
+	{
+		closestPoint->SetX(clickedPt.GetX());
+		closestPoint->SetY(clickedPt.GetY());
+		closestPoint->SetZ(clickedPt.GetZ());
+
+		// 更新场景显示
+		GetDocument()->bsp_mgr.Display(GetDocument()->dContext);
+	}
+
 	if (!(nFlags & MK_SHIFT) && !(nFlags & MK_CONTROL) && !winZoom)
 	{
 		myView->Select(point.x, point.y);
