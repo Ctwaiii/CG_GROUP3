@@ -333,6 +333,9 @@ void CCadSurfView::OnLButtonDblClk(UINT nFlags, CPoint point)
 				newpt.SetY(vec_num[1]);
 				newpt.SetZ(vec_num[2]);
 
+				selectedPoint = nullptr;
+				m_isPointSelected = false;
+
 				// 重新显示场景
 				GetDocument()->bsp_mgr.Display(GetDocument()->dContext);
 				return;
@@ -346,6 +349,9 @@ void CCadSurfView::OnLButtonDblClk(UINT nFlags, CPoint point)
 		CGLCurve* target_curve = GetDocument()->bsp_mgr.gCRV;
 		if (target_curve && target_curve->GetObjID() == sel_curve->GetObjID()) {
 
+			selectedPoint = nullptr;
+			m_isPointSelected = false;
+
 			// 获取当前拉伸面启用状态
 			int nEnbale = GetDocument()->bsp_mgr.enable_stretch_face ? 1 : 0;
 
@@ -358,7 +364,7 @@ void CCadSurfView::OnLButtonDblClk(UINT nFlags, CPoint point)
 				CString rString = ip.str;
 				auto num_len = rString.GetLength() - rString.Find(":") - 1;
 				auto rr = rString.Right(num_len).Trim();
-				int a = atoi(rr.GetString());
+				int a = atoi(rr.GetString());  //将字符串转换为整数
 				if (nEnbale != a) {
 					if (a == 1) {
 						GetDocument()->bsp_mgr.enable_stretch_face = true; // 启用拉伸面
@@ -375,6 +381,10 @@ void CCadSurfView::OnLButtonDblClk(UINT nFlags, CPoint point)
 	}
 	// **处理选中的拉伸面对象**
 	CGLSurface* sel_surface = dynamic_cast<CGLSurface*>(sel_obj);
+	
+	selectedPoint = nullptr;
+	m_isPointSelected = false;
+
 	if (sel_surface) {
 		// 验证选中的拉伸面是否是当前管理的拉伸面对象
 		CGLSurface* target_surface = GetDocument()->bsp_mgr.stretch_face;
@@ -425,6 +435,9 @@ void CCadSurfView::OnLButtonDblClk(UINT nFlags, CPoint point)
 				dir.SetZ(vec_num[2]);
 				len = (unsigned long int)vec_num[3];
 
+				selectedPoint = nullptr;
+				m_isPointSelected = false;
+
 				// 重新显示场景
 				GetDocument()->bsp_mgr.Display(GetDocument()->dContext);
 				return;
@@ -440,7 +453,7 @@ void CCadSurfView::OnLButtonDown(UINT nFlags, CPoint point)
 {
 	SetCapture();
 
-	//如果草图绘制;
+	// 如果是草图绘制
 	if (m_pCmd)
 	{
 		CPoint3D pt3d;
@@ -450,9 +463,11 @@ void CCadSurfView::OnLButtonDown(UINT nFlags, CPoint point)
 		return;
 	}
 
-	myXmin = point.x;  myYmin = point.y;
-	myXmax = point.x;  myYmax = point.y;
-
+	//// 记录按下点位置(绘制矩形)
+	//myXmin = point.x;
+	//myYmin = point.y;
+	//myXmax = point.x;
+	//myYmax = point.y;
 
 	lbutdown = true;
 	lDownPnt = point;
@@ -461,38 +476,57 @@ void CCadSurfView::OnLButtonDown(UINT nFlags, CPoint point)
 	CPoint3D clickedPt;
 	myView->ScreenToPoint(point.x, point.y, clickedPt);
 
-	// 初始化最近点的变量
-	double minDistance = DBL_MAX; // 设置一个很大的初始距离
-	int closestPointIdx = -1;     // 最近点的索引
-	CPoint3D* closestPoint = nullptr;
+	// 设置一个距离阈值
+	double threshold = 400.0;
 
-	// 遍历所有点，找到距离鼠标点击点最近的点
-	for (int i = 0; i < GetDocument()->bsp_mgr.vec_CPoint3D.size(); ++i)
+	if (m_isPointSelected)
 	{
-		CPoint3D& pt = GetDocument()->bsp_mgr.vec_CPoint3D[i]; // 获取控制点
-		double distance = sqrt(pow(pt.GetX() - clickedPt.GetX(), 2) +
-			pow(pt.GetY() - clickedPt.GetY(), 2) +
-			pow(pt.GetZ() - clickedPt.GetZ(), 2)); // 计算欧几里得距离
-
-		if (distance < minDistance) // 更新最近点
+		if (selectedPoint)
 		{
-			minDistance = distance;
-			closestPointIdx = i;
-			closestPoint = &pt;
+			selectedPoint->SetX(clickedPt.GetX());
+			selectedPoint->SetY(clickedPt.GetY());
+			selectedPoint->SetZ(clickedPt.GetZ());
+
+			// 更新场景显示
+			GetDocument()->bsp_mgr.Display(GetDocument()->dContext);
+			InvalidateRect(NULL, FALSE); // 确保视图刷新
+		}
+		m_isPointSelected = false; // 重置状态
+		selectedPoint = nullptr;
+		ReleaseCapture(); // 释放鼠标捕获
+		CView::OnLButtonDown(nFlags, point); // 调用基类方法
+		return;
+	}
+	else
+	{
+		// 选择点的逻辑
+		selectedPoint = nullptr;
+		m_isPointSelected = false;
+		double minDistance = threshold;
+		CPoint3D* nearestPoint = nullptr;
+
+		for (int i = 0; i < GetDocument()->bsp_mgr.vec_CPoint3D.size(); ++i)
+		{
+			CPoint3D& pt = GetDocument()->bsp_mgr.vec_CPoint3D[i];
+			double distance = sqrt(pow(pt.GetX() - clickedPt.GetX(), 2) +
+				pow(pt.GetY() - clickedPt.GetY(), 2) +
+				pow(pt.GetZ() - clickedPt.GetZ(), 2)); // 计算欧几里得距离
+
+			if (distance < minDistance)
+			{
+				minDistance = distance;
+				nearestPoint = &pt;
+			}
+		}
+		
+		if (nearestPoint)
+		{
+			selectedPoint = nearestPoint;
+			m_isPointSelected = true;
 		}
 	}
 
-	// 如果找到最近点，更新其坐标为鼠标点击的坐标
-	if (closestPoint)
-	{
-		closestPoint->SetX(clickedPt.GetX());
-		closestPoint->SetY(clickedPt.GetY());
-		closestPoint->SetZ(clickedPt.GetZ());
-
-		// 更新场景显示
-		GetDocument()->bsp_mgr.Display(GetDocument()->dContext);
-	}
-
+	// 处理其他操作，依赖于按下的修饰键
 	if (!(nFlags & MK_SHIFT) && !(nFlags & MK_CONTROL) && !winZoom)
 	{
 		myView->Select(point.x, point.y);
@@ -503,11 +537,13 @@ void CCadSurfView::OnLButtonDown(UINT nFlags, CPoint point)
 		myView->MultiSelect(point.x, point.y);
 		InvalidateRect(NULL, FALSE);
 	}
+
 	CView::OnLButtonDown(nFlags, point);
 }
 
 void CCadSurfView::OnLButtonUp(UINT nFlags, CPoint point)
 {
+	CView::OnLButtonUp(nFlags, point);
 	if (m_pCmd)
 	{
 		ReleaseCapture();
@@ -620,11 +656,11 @@ void CCadSurfView::OnMouseMove(UINT nFlags, CPoint point)
 		else
 			coord.Format("Rotation Allowed Only In Axonometric View");
 	}
-	if (lbutdown && !(nFlags & MK_CONTROL) && !(nFlags & MK_SHIFT))
+	/*if (lbutdown && !(nFlags & MK_CONTROL) && !(nFlags & MK_SHIFT))
 	{
 		myXmax = point.x; myYmax = point.y;
 		DrawRectangle(true, LongDash);
-	}
+	}*/
 
 	CPoint3D C;
 	myView->ScreenToPoint(point.x, point.y, C);
