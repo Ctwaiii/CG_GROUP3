@@ -84,6 +84,9 @@ public:
                                 const LineStyle aLineStyle = Solid  );
 private:
 	CCommand* m_pCmd; 
+	CPoint3D* m_selectedPoint = nullptr;  // 用于保存选中的点
+	CPoint3D* selectedPoint;
+	bool m_isPointSelected = false;   //用于标记该点是否被选中
 // Operations
 public:
 
